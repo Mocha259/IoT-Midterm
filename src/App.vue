@@ -21,8 +21,6 @@
       <!-- 距离优化路径 -->
       <dv-border-box-8 class="path-optimal"><h3 style="position: absolute; left: 10px; top: 5px">最短路径：{{bestDist}}m</h3><br><h4 style="position: absolute; left: 10px; top: 30px">路径：</h4>
         <div style="margin-left: 10px; margin-top: 30px; ">
-          <!-- 1111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111 -->
-          <!-- <span style="margin-left: 10px; margin-top: 30px; overflow-x: scroll; overflow-y: hidden" v-for="item in optimPath" :key="item">{{item}} -></span> -->
           {{optimPath}}
         </div>
       </dv-border-box-8>
@@ -50,12 +48,12 @@
           clearable>
         </el-input></div>
         <div class="leftInterval" style="float: left; width: 40%; margin-top: 95px;">
-          <span style="position: absolute; left: 7px; top: 117px; font-size: 14px; color: white">起点坐标：</span>
+          <span style="position: absolute; left: 5%; top: 50%; ; color: white">起始点：</span>
         </div>
         <div class="startRow">
-          <el-select v-model="rowOfStart" placeholder="纵坐标" @change="changeNet">
+          <el-select v-model="start_node" placeholder="起点坐标" @change="changeStart">
             <el-option
-              v-for="item in selectedRow"
+              v-for="item in checkList"
               :key="item"
               :label="item"
               :value="item">
@@ -63,9 +61,9 @@
           </el-select>
         </div>
         <div class="startCol">
-          <el-select v-model="colOfStart" placeholder="横坐标"  @change="changeNet">
+          <el-select v-model="end_node" placeholder="终点坐标">
             <el-option
-              v-for="item in selectedCol"
+              v-for="item in endPointList"
               :key="item"
               :label="item"
               :value="item">
@@ -73,11 +71,11 @@
           </el-select>
         </div>
 
-        <el-button class="start" @click="start">
-          开始优化
+        <el-button class="start" @click="drawDistOptimalPath">
+          距离最优
         </el-button>
-        <el-button class="reset" @click="reset">
-          重置
+        <el-button class="reset" @click="drawTimeOptimalPath">
+          时间最优
         </el-button>
       </dv-border-box-8>
 
@@ -105,25 +103,25 @@ export default {
    data() {
     return{
         
-        speed: '',
+        speed: 5.0,
         // realSpeed: parseFloat(speed),
-        interval: '5',
+        interval: 5.0,
         // realIntercal: parseInt(interval),
          isRouterAlive: true,
         input: '',
         checkList: [],//记录选中的结点
-        graphInfo: [],
+        distOptInfo: [],
+        timeOptInfo: [],
         row: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
-        selectedRow: [],
-        selectedCol: [],
+        endPointList: [],
         rowOfStart: '',
         colOfStart: '',
         rowOfEnd: '',
         colOfEnd: '',
         start_node: '',
         end_node: '',
-        optimPath: ['A1','A2','A3','A4','A5','A6','B1','B2','B3'],
-        optimTime: ['A1','B2','C3','D4','E5','F5','G5','H5','H6','G6','F6','E6','D7','C8','B9','A10','A8','A7','A6','A5'],
+        optimPath: [],
+        optimTime: [],
         bestDist: 99999,
         bestTime: 99999,
         arrow: '-->',
@@ -131,6 +129,58 @@ export default {
       }
     },
     methods: {
+      getDistOptimalInfo() {
+        for(var i = 0; i < this.checkList.length - 1; i++){
+          for( var j = i + 1; j < this.checkList.length; j++){
+            var linkOf2Node = { start: '', dis: -1.0, end: '' }
+            linkOf2Node.start = this.checkList[i]
+            linkOf2Node.end   = this.checkList[j]
+            
+            var startX = linkOf2Node.start.slice(1)
+            var endX   = linkOf2Node.end.slice(1)
+            var disOnX = Math.abs(parseInt(endX) - parseInt(startX))
+            
+            var startY  = linkOf2Node.start.slice(0,1)
+            var endY    = linkOf2Node.end.slice(0,1)
+            var disOnY = Math.abs(startY.charCodeAt() - endY.charCodeAt())
+
+            var ans = 0
+            if(disOnX < disOnY){
+              ans = Math.sqrt(2 * disOnX * disOnX) + disOnY - disOnX
+            }else{
+              ans = Math.sqrt(2 * disOnY * disOnY) + disOnX - disOnY
+            }
+            linkOf2Node.dis = ans * this.interval
+            this.distOptInfo.push(linkOf2Node)
+          }
+        }
+      },
+      getTimeOptimalInfo(){
+        for(var i = 0; i < this.checkList.length - 1; i++){
+          for( var j = i + 1; j < this.checkList.length; j++){
+            var linkOf2Node = { start: '', dis: -1.0, end: '' }
+            linkOf2Node.start = this.checkList[i]
+            linkOf2Node.end   = this.checkList[j]
+            
+            var startX = linkOf2Node.start.slice(1)
+            var endX   = linkOf2Node.end.slice(1)
+            var disOnX = Math.abs(parseInt(endX) - parseInt(startX))
+            
+            var startY  = linkOf2Node.start.slice(0,1)
+            var endY    = linkOf2Node.end.slice(0,1)
+            var disOnY = Math.abs(startY.charCodeAt() - endY.charCodeAt())
+
+            var ans = 0
+            if(disOnX < disOnY){
+              ans = disOnY
+            }else{
+              ans = disOnX
+            }
+            linkOf2Node.dis = ans * this.interval / this.speed
+            this.timeOptInfo.push(linkOf2Node)
+          }
+        }
+      },
       permutation(a) {
           // 保存最终输出结果
         let result = [];
@@ -170,7 +220,7 @@ export default {
         recur(a);
         return result;
       },
-      function(){
+      distOptimalPath(){
         let self = this
         class Graph {
           constructor() {
@@ -202,58 +252,51 @@ export default {
           }
 
           getDistOptimalPath() {
-            //暂时默认第一个选中的点是起点，最后一个选中的点是终点
-            var start_node  = self.checkList[0]
-            var end_node    = self.checkList[self.checkList.length - 1]
-
-            for(var i = 0; i < this.nodes.length; ++i){
-              if(this.nodes[i] == start_node 
-                || this.nodes[i] == end_node)
-              {
-                this.nodes.splice(i, 1)
-              }
-            }
+            var index_of_start = this.nodes.indexOf(self.start_node)
+            this.nodes.splice(index_of_start, 1)
+            var index_of_end   = this.nodes.indexOf(self.end_node)
+            this.nodes.splice(index_of_end, 1)
             
           }
-
-
         }
-        // 先保存起点和终点
-        this.start_node = this.checkList[0]
-        this.end_node   = this.checkList[this.checkList.length - 1]
+
         // 创建图并添加点和边
         var graph = new Graph()
+        graph.nodes.splice(0, graph.nodes.length)
         for(var i = 0; i < this.checkList.length; i++){
             graph.addNode(this.checkList[i])
         }
-        for(var i = 0; i < this.graphInfo.length; i++){
-          graph.addEdge(this.graphInfo[i].start, this.graphInfo[i].end, this.graphInfo[i].dis)
+        for(var i = 0; i < this.distOptInfo.length; i++){
+          graph.addEdge(this.distOptInfo[i].start, this.distOptInfo[i].end, this.distOptInfo[i].dis)
         }
+        // console.log('grapth.nodes:' + graph.nodes)
         //剔除起点和终点，对中间结点全排列
         graph.getDistOptimalPath()
-        this.all_path = this.permutation(graph.nodes)
-        // 把起点和终点放回去
+        // console.log('grapth.nodes after filter:' + graph.nodes)  
+        graph.all_path = this.permutation(graph.nodes)
+          // 把起点和终点放回去
         var best_dist = 999999
         var best_path_index = 0
-        for(var i = 0; i < this.all_path.length; i++){
-          this.all_path[i].push(this.end_node)
-          this.all_path[i].unshift(this.start_node)
+        
+        for(var i = 0; i < graph.all_path.length; i++){
+          // console.log('grall.all_path' + i + ': ' + graph.all_path[i])
+          graph.all_path[i].push(this.end_node)
+          graph.all_path[i].unshift(this.start_node)
           
           var tmp_dist = 0
-          for(var j = 0; j < this.all_path[i].length - 1; j++){
+          for(var j = 0; j < graph.all_path[i].length - 1; j++){
+            
             if(tmp_dist > best_dist){
               continue
             }
-            for(var k = 0; k < graph.edges[this.all_path[i][j]].length; k++){
-              if(graph.edges[this.all_path[i][j]][k].node == this.all_path[i][j + 1]){
-                tmp_dist += graph.edges[this.all_path[i][j]][k].weight
+            for(var k = 0; k < graph.edges[graph.all_path[i][j]].length; k++){
+              if(graph.edges[graph.all_path[i][j]][k].node == graph.all_path[i][j + 1]){
+                tmp_dist += graph.edges[graph.all_path[i][j]][k].weight
                 break
               } //endif
             }
-            
           }//end of for loop
-          console.log('tmp_dist')
-          console.log(best_dist)
+
           if (tmp_dist < best_dist){
             best_dist = tmp_dist
             best_path_index = i
@@ -262,42 +305,108 @@ export default {
 
         this.bestDist = best_dist
         this.optimPath.splice(0, this.optimPath.length)
-        for(var i = 0; i < this.all_path[best_path_index].length; i++){
-          this.optimPath.push(this.all_path[best_path_index][i])
+        for(var i = 0; i < graph.all_path[best_path_index].length; i++){
+          this.optimPath.push(graph.all_path[best_path_index][i])
         }
-        console.log('best path: ' + this.optimPath)
-        console.log('best dist: ' + best_dist)
-        // graph.display()
-        // console.log('所有结点：' + )
-        // console.log('所有中间结点：' + graph.nodes)
+      
+
+      
+      console.log('best path: ' + this.optimPath)
+      console.log('best dist: ' + best_dist)
         
       },
-      getGraphInfo() {
-        for(var i = 0; i < this.checkList.length - 1; i++){
-          for( var j = i + 1; j < this.checkList.length; j++){
-            var linkOf2Node = { start: '', dis: -1.0, end: '' }
-            linkOf2Node.start = this.checkList[i]
-            linkOf2Node.end   = this.checkList[j]
-            
-            var startX = linkOf2Node.start.slice(1)
-            var endX   = linkOf2Node.end.slice(1)
-            var disOnX = Math.abs(parseInt(endX) - parseInt(startX))
-            
-            var startY  = linkOf2Node.start.slice(0,1)
-            var endY    = linkOf2Node.end.slice(0,1)
-            var disOnY = Math.abs(startY.charCodeAt() - endY.charCodeAt())
-
-            var ans = 0
-            if(disOnX < disOnY){
-              ans = Math.sqrt(2 * disOnX * disOnX) + disOnY - disOnX
-            }else{
-              ans = Math.sqrt(2 * disOnY * disOnY) + disOnX - disOnY
-            }
-            linkOf2Node.dis = ans * this.interval
-            this.graphInfo.push(linkOf2Node)
+      timeOptimalPath(){
+        let self = this
+        class Graph {
+          constructor() {
+              this.edges = {};
+              this.nodes = [];
+              this.all_path = [];
           }
+
+          addNode(node) {
+              this.nodes.push(node);
+              this.edges[node] = [];
+          }
+
+          addEdge(node1, node2, weight = 1) {
+              this.edges[node1].push({ node: node2, weight: weight });
+              this.edges[node2].push({ node: node1, weight: weight });
+          }
+
+          addDirectedEdge(node1, node2, weight = 1) {
+              this.edges[node1].push({ node: node2, weight: weight });
+          }
+
+          display() {
+              let graph = "";
+              this.nodes.forEach(node => {
+                graph += node + "->" + this.edges[node].map(n => n.weight + '-' + n.node ).join(", ") + "\n";
+              });
+              console.log(graph);
+          }
+
+          getDistOptimalPath() {
+            var index_of_start = this.nodes.indexOf(self.start_node)
+            this.nodes.splice(index_of_start, 1)
+            var index_of_end   = this.nodes.indexOf(self.end_node)
+            this.nodes.splice(index_of_end, 1)
+            
+          }
+          
+
         }
+        // 创建图并添加点和边
+        var graph = new Graph()
+        for(var i = 0; i < this.checkList.length; i++){
+            graph.addNode(this.checkList[i])
+        }
+        for(var i = 0; i < this.timeOptInfo.length; i++){
+          graph.addEdge(this.timeOptInfo[i].start, this.timeOptInfo[i].end, this.timeOptInfo[i].dis)
+        }
+        
+        //剔除起点和终点，对中间结点全排列
+        graph.getDistOptimalPath()
+        graph.all_path = this.permutation(graph.nodes)
+
+        // 把起点和终点放回去
+        var best_dist = 999999
+        var best_path_index = 0
+        for(var i = 0; i < graph.all_path.length; i++){
+          graph.all_path[i].push(this.end_node)
+          graph.all_path[i].unshift(this.start_node)
+          
+          var tmp_dist = 0
+          for(var j = 0; j < graph.all_path[i].length - 1; j++){
+            if(tmp_dist > best_dist){
+              continue
+            }
+            for(var k = 0; k < graph.edges[graph.all_path[i][j]].length; k++){
+              if(graph.edges[graph.all_path[i][j]][k].node == graph.all_path[i][j + 1]){
+                tmp_dist += graph.edges[graph.all_path[i][j]][k].weight
+                break
+              } //endif
+            }
+            
+          }//end of for loop
+          
+          if (tmp_dist < best_dist){
+            best_dist = tmp_dist
+            best_path_index = i
+          }//endif
+        }
+
+        this.bestTime = best_dist
+        this.optimTime.splice(0, this.optimTime.length)
+        for(var i = 0; i < graph.all_path[best_path_index].length; i++){
+          this.optimTime.push(graph.all_path[best_path_index][i])
+        }
+        console.log('best path: ' + this.optimTime)
+        console.log('best time: ' + best_dist)
+
+        
       },
+      
       getElementPagePosition(element){
         //计算x坐标
         var actualLeft = element.offsetLeft;
@@ -346,128 +455,303 @@ export default {
         //返回结果
         return {x: left, y: right}
       },
-      changeNet(){
-        //清空
-        this.selectedRow.splice(0, this.selectedRow.length)
-        this.selectedCol.splice(0, this.selectedCol.length)
+      changeStart(){
+        this.endPointList.splice(0, this.endPointList.length)
         for(var i = 0; i < this.checkList.length; i++){
-          var tmpRow = this.checkList[i].charAt(0)
-          if(this.selectedRow.indexOf(tmpRow) < 0){
-            this.selectedRow.push(tmpRow)
-          }
-          var tmpCol = this.checkList[i].slice(1)
-          var col = parseInt(tmpCol)
-          if(this.selectedCol.indexOf(col) < 0){
-            this.selectedCol.push(col)
-          }
+          this.endPointList.push(this.checkList[i])
         }
-        this.selectedRow.sort();
-        this.selectedCol.sort();
+        var index = this.checkList.indexOf(this.start_node)
+        this.endPointList.splice(index, 1)
+      },
+      changeNet(){
+
       },
       reset(){
-          this.checkList.slice(0, this.checkList.length)
+          this.checkList.splice(0, this.checkList.length)
           this.selectedRow.splice(0, this.selectedRow.length)
           this.selectedCol.splice(0, this.selectedCol.length)
-          this.speed = ''
-          this.interval = ''
+          this.speed = 5
+          this.interval = 5
           location.reload();
       },
-      start(){
-          this.getGraphInfo()
-          // console.log(this.graphInfo)
-          this.function()
-          console.log(this.tmp)
-          var canvas = document.getElementById("Path")
-          var width = window.innerWidth
-          var height = window.innerHeight
-          canvas.width = width
-          canvas.height = height
-                       
-          //检测当前浏览器是否支持Canvas对象，以免在一些不支持html5的浏览器中提示语法错误
-          if(canvas.getContext){
-            var offset_x = 3.5
-            var offset_y = 6.5
-            //97 164
-            //365 500
-            for(var i = 0; i < this.optimPath.length - 1; i++){
-              var element = document.getElementById(this.optimPath[i])
-              var start_x = this.getElementPagePosition(element).x + offset_x
-              var start_y = this.getElementPagePosition(element).y + offset_y
-              // var start_x = this.getElementViewPosition(element).x + offset_x
-              // var start_y = this.getElementViewPosition(element).y + offset_y
-              element = document.getElementById(this.optimPath[i + 1])
-              var end_x = this.getElementPagePosition(element).x + offset_x
-              var end_y = this.getElementPagePosition(element).y + offset_y
-              // var end_x = this.getElementViewPosition(element).x + offset_x
-              // var end_y = this.getElementViewPosition(element).y + offset_y
-              
-              // console.log('起点：(' + start_x + ',' + start_y + ')-->终点：('+ end_x + ',' + end_y + ')')
-              var ctx = canvas.getContext("2d")
-              ctx.beginPath()
-              
-              ctx.strokeStyle = `rgba(${81}, ${160}, ${255},${0.9})`
-              ctx.lineCap = "round"
-              ctx.lineJoin = "round"
-              ctx.lineWidth = 5
-              ctx.shadowColor = 'rgba(255,255,0,1)';
-              ctx.shadowBlur = 20;
-              ctx.shadowOffsetX = 10100;
-              ctx.shadowOffsetY = 10100;
-              ctx.moveTo(start_x, start_y)
-              ctx.lineTo(end_x, end_y)
-              ctx.stroke()
-              ctx.closePath()
+      drawDistOptimalPath(){
+        this.optimPath.splice(0, this.optimPath.length)
+        this.distOptInfo.splice(0, this.distOptInfo.length)
+        this.getDistOptimalInfo()       //初始化图节点的信息
+        console.log('优化目标：距离最优')
+        console.log('基本信息：speed: ' + this.speed + ' interval: ' + this.interval)
+        console.log('所有结点：' + this.checkList)
+        console.log('起点：' + this.start_node + ' ---> 终点：' + this.end_node)
+        this.distOptimalPath()          //获取由起点至终点的最佳遍历路径
+        //扩充出实际路径
+        var actualPath = []
+        for(var i = 0; i < this.optimPath.length; i++)
+        {
+          
+          // 保存当前结点
+          actualPath.push(this.optimPath[i])
+          // 判断是否已经是终点
+          if(actualPath[actualPath.length - 1] == this.end_node){
+            break
+          }
 
-              // ctx.strokeStyle = red
-              // ctx.lineWidth = 2
-              // ctx.moveTo(97, 164)
-              // ctx.lineTo(365, 500)
-              // ctx.stroke()
-              // let next_x
-              // let next_y
+          var pre_x = parseInt(this.optimPath[i].slice(1))              // 当前结点的横坐标，即处于哪一列
+          var nxt_x = parseInt(this.optimPath[i + 1].slice(1))          // 下一结点的横坐标，即处于哪一列
 
-              // // 第一帧执行的时间
-              // let startTime;
-              // // 期望动画持续的时间
-              // const duration = 1000
-              // var ctx = canvas.getContext("2d")
-              // ctx.beginPath()
-              // ctx.moveTo(start_x, start_y)
-              // ctx.strokeStyle = `rgba(${81}, ${160}, ${255},${0.25})`
-              // ctx.lineWidth = 4
-              // const step = (currentTime) => {
-              //   // 第一帧绘制时记录下开始的时间
-              //   !startTime && (startTime = currentTime)
-              //   // 已经过去的时间(ms)
-              //   const timeElapsed = currentTime - startTime
-              //   // 动画执行的进度 {0,1}
-              //   const progress = Math.min(timeElapsed / duration, 1)
+          var pre_y = this.optimPath[i].slice(0, 1).charCodeAt()        // 当前结点的纵坐标，即处于哪一行
+          var nxt_y = this.optimPath[i + 1].slice(0, 1).charCodeAt()    // 下一结点的横坐标，即处于哪一列
 
-              //   // 绘制方法
-              //   const draw = () => {
-              //       // 计算这一帧中线段应该到达的坐标点
-              //       next_x = start_x + (end_x - start_x) * progress
-              //       next_y = start_y + (end_y - start_y) * progress
-              //       // 用直线连接子路径的最后的点到(nextX,nextY)坐标
-              //       ctx.lineTo(next_x, next_y)
-              //       // 绘制路径(所有子路径都会被绘制一次)
-              //       ctx.stroke()
-              //   }
-              //   draw()
+          var dis_on_x = Math.abs(nxt_x - pre_x)                        // 当前结点与下一结点在横坐标上的差距
+          var dis_on_y = Math.abs(nxt_y - pre_y)                        // 当前结点与下一结点在纵坐标上的差距
 
-              //   if (progress < 1) {
-              //       requestAnimationFrame(step)
-              //   } else {
-              //       console.log('动画执行完毕')
-              //   }
-              // }
+          var dir_on_x = (nxt_x - pre_x) / dis_on_x                     // 当前结点与下一结点在横坐标上的方向矢量，长度为1
+          var dir_on_y = (nxt_y - pre_y) / dis_on_y                     // 当前结点与下一结点在纵坐标上的方向矢量，长度为1
 
-              // requestAnimationFrame(step)
-              ctx.closePath()
-              //沿着坐标点顺序的路径绘制直线
-            } 
+          var tmp_node = ''
+          var tmp_x = pre_x
+          var tmp_y = pre_y
+
+          for(var j = 0; j < Math.min(dis_on_x, dis_on_y); j++){
+            tmp_x = tmp_x + dir_on_x
+            tmp_y = tmp_y + dir_on_y
+            tmp_node = String.fromCharCode(tmp_y)
+            tmp_node += tmp_x.toString()
+            // console.log(tmp_node)
+            actualPath.push(tmp_node)
+            tmp_node = ''
+          } // end for(var j = 0; j < Math.min(dis_on_x, dis_on_y); j++)
+        } // end for(var i = 0; i < this.optimPath.length; i++)
+
+        var canvas = document.getElementById("Path")
+        var width = window.innerWidth
+        var height = window.innerHeight
+        canvas.width = width
+        canvas.height = height
+                      
+        //检测当前浏览器是否支持Canvas对象，以免在一些不支持html5的浏览器中提示语法错误
+        if(canvas.getContext){
+          var offset_x = 5
+          var offset_y = 6.5
+          //97 164
+          //365 500
+          for(var i = 0; i < actualPath.length - 1; i++){
+            var element = document.getElementById(actualPath[i])
+            var start_x = this.getElementPagePosition(element).x + offset_x
+            var start_y = this.getElementPagePosition(element).y + offset_y
+
+            element = document.getElementById(actualPath[i + 1])
+            var end_x = this.getElementPagePosition(element).x + offset_x
+            var end_y = this.getElementPagePosition(element).y + offset_y
+
+            // console.log('起点：(' + start_x + ',' + start_y + ')-->终点：('+ end_x + ',' + end_y + ')')
+            var ctx = canvas.getContext("2d")
+            ctx.beginPath()
             
-          }   
+            ctx.strokeStyle = `rgba(${81}, ${160}, ${255},${0.9})`
+            ctx.lineCap = "round"
+            ctx.lineJoin = "round"
+            ctx.lineWidth = 5
+            // ctx.shadowColor = 'rgba(255,255,0,1)';
+            // ctx.shadowBlur = 20;
+            // ctx.shadowOffsetX = 10100;
+            // ctx.shadowOffsetY = 10100;
+            ctx.moveTo(start_x, start_y)
+            ctx.lineTo(end_x, end_y)
+            ctx.stroke()
+            ctx.closePath()
+
+            // ctx.strokeStyle = red
+            // ctx.lineWidth = 2
+            // ctx.moveTo(97, 164)
+            // ctx.lineTo(365, 500)
+            // ctx.stroke()
+            // let next_x
+            // let next_y
+
+            // // 第一帧执行的时间
+            // let startTime;
+            // // 期望动画持续的时间
+            // const duration = 1000
+            // var ctx = canvas.getContext("2d")
+            // ctx.beginPath()
+            // ctx.moveTo(start_x, start_y)
+            // ctx.strokeStyle = `rgba(${81}, ${160}, ${255},${0.25})`
+            // ctx.lineWidth = 4
+            // const step = (currentTime) => {
+            //   // 第一帧绘制时记录下开始的时间
+            //   !startTime && (startTime = currentTime)
+            //   // 已经过去的时间(ms)
+            //   const timeElapsed = currentTime - startTime
+            //   // 动画执行的进度 {0,1}
+            //   const progress = Math.min(timeElapsed / duration, 1)
+
+            //   // 绘制方法
+            //   const draw = () => {
+            //       // 计算这一帧中线段应该到达的坐标点
+            //       next_x = start_x + (end_x - start_x) * progress
+            //       next_y = start_y + (end_y - start_y) * progress
+            //       // 用直线连接子路径的最后的点到(nextX,nextY)坐标
+            //       ctx.lineTo(next_x, next_y)
+            //       // 绘制路径(所有子路径都会被绘制一次)
+            //       ctx.stroke()
+            //   }
+            //   draw()
+
+            //   if (progress < 1) {
+            //       requestAnimationFrame(step)
+            //   } else {
+            //       console.log('动画执行完毕')
+            //   }
+            // }
+
+            // requestAnimationFrame(step)
+            //沿着坐标点顺序的路径绘制直线
+          } 
+          
+        }   
+      },
+      drawTimeOptimalPath(){
+        
+        this.timeOptInfo.splice(0, this.timeOptInfo.length)
+        this.timeOptInfo.splice(0, this.timeOptInfo.length)
+        this.getTimeOptimalInfo()       //初始化图节点的信息
+        console.log('优化目标：时间最优')
+        console.log('基本信息：speed: ' + this.speed + ' interval: ' + this.interval)
+        console.log('起点：' + this.start_node + '---> 终点：' + this.end_node)
+        this.timeOptimalPath()          //获取由起点至终点的最佳遍历路径
+        // console.log('最短时间：' + this.bestTime)
+        var actualPath = []
+        
+        for(var i = 0; i < this.optimTime.length; i++)
+        {
+          // console.log(this.optimTime[i])
+          // 保存当前结点
+          actualPath.push(this.optimTime[i])
+          // 判断是否已经是终点
+          if(actualPath[actualPath.length - 1] == this.end_node){
+            break
+          }
+
+          
+          var pre_x = parseInt(this.optimTime[i].slice(1))              // 当前结点的横坐标，即处于哪一列
+          var nxt_x = parseInt(this.optimTime[i + 1].slice(1))          // 下一结点的横坐标，即处于哪一列
+
+          var pre_y = this.optimTime[i].slice(0, 1).charCodeAt()        // 当前结点的纵坐标，即处于哪一行
+          var nxt_y = this.optimTime[i + 1].slice(0, 1).charCodeAt()    // 下一结点的横坐标，即处于哪一列
+
+          var dis_on_x = Math.abs(nxt_x - pre_x)                        // 当前结点与下一结点在横坐标上的差距
+          var dis_on_y = Math.abs(nxt_y - pre_y)                        // 当前结点与下一结点在纵坐标上的差距
+
+          var dir_on_x = (nxt_x - pre_x) / dis_on_x                     // 当前结点与下一结点在横坐标上的方向矢量，长度为1
+          var dir_on_y = (nxt_y - pre_y) / dis_on_y                     // 当前结点与下一结点在纵坐标上的方向矢量，长度为1
+
+          var tmp_node = ''
+          var tmp_x = pre_x
+          var tmp_y = pre_y
+
+          for(var j = 0; j < Math.min(dis_on_x, dis_on_y); j++){
+            tmp_x = tmp_x + dir_on_x
+            tmp_y = tmp_y + dir_on_y
+            tmp_node = String.fromCharCode(tmp_y)
+            tmp_node += tmp_x.toString()
+            // console.log(tmp_node)
+            actualPath.push(tmp_node)
+            tmp_node = ''
+          } // end for(var j = 0; j < Math.min(dis_on_x, dis_on_y); j++)
+        } // end for(var i = 0; i < this.optimPath.length; i++)
+
+        // console.log('actualPath: ' + actualPath)
+        var canvas = document.getElementById("Path")
+        var width = window.innerWidth
+        var height = window.innerHeight
+        canvas.width = width
+        canvas.height = height
+                       
+        //检测当前浏览器是否支持Canvas对象，以免在一些不支持html5的浏览器中提示语法错误
+        if(canvas.getContext){
+          var offset_x = 5
+          var offset_y = 6.5
+          //97 164
+          //365 500
+          for(var i = 0; i < actualPath.length - 1; i++){
+            var element = document.getElementById(actualPath[i])
+            var start_x = this.getElementPagePosition(element).x + offset_x
+            var start_y = this.getElementPagePosition(element).y + offset_y
+            // var start_x = this.getElementViewPosition(element).x + offset_x
+            // var start_y = this.getElementViewPosition(element).y + offset_y
+            element = document.getElementById(actualPath[i + 1])
+            var end_x = this.getElementPagePosition(element).x + offset_x
+            var end_y = this.getElementPagePosition(element).y + offset_y
+            // var end_x = this.getElementViewPosition(element).x + offset_x
+            // var end_y = this.getElementViewPosition(element).y + offset_y
+            
+            // console.log('起点：(' + start_x + ',' + start_y + ')-->终点：('+ end_x + ',' + end_y + ')')
+            var ctx = canvas.getContext("2d")
+            ctx.beginPath()
+            
+            ctx.strokeStyle = `rgba(${228}, ${17}, ${136},${0.9})`
+            ctx.lineCap = "round"
+            ctx.lineJoin = "round"
+            ctx.lineWidth = 5
+            // ctx.shadowColor = 'rgba(255,255,0,1)';
+            // ctx.shadowBlur = 20;
+            // ctx.shadowOffsetX = 10100;
+            // ctx.shadowOffsetY = 10100;
+            ctx.moveTo(start_x, start_y)
+            ctx.lineTo(end_x, end_y)
+            ctx.stroke()
+            ctx.closePath()
+
+            // ctx.strokeStyle = red
+            // ctx.lineWidth = 2
+            // ctx.moveTo(97, 164)
+            // ctx.lineTo(365, 500)
+            // ctx.stroke()
+            // let next_x
+            // let next_y
+
+            // // 第一帧执行的时间
+            // let startTime;
+            // // 期望动画持续的时间
+            // const duration = 1000
+            // var ctx = canvas.getContext("2d")
+            // ctx.beginPath()
+            // ctx.moveTo(start_x, start_y)
+            // ctx.strokeStyle = `rgba(${81}, ${160}, ${255},${0.25})`
+            // ctx.lineWidth = 4
+            // const step = (currentTime) => {
+            //   // 第一帧绘制时记录下开始的时间
+            //   !startTime && (startTime = currentTime)
+            //   // 已经过去的时间(ms)
+            //   const timeElapsed = currentTime - startTime
+            //   // 动画执行的进度 {0,1}
+            //   const progress = Math.min(timeElapsed / duration, 1)
+
+            //   // 绘制方法
+            //   const draw = () => {
+            //       // 计算这一帧中线段应该到达的坐标点
+            //       next_x = start_x + (end_x - start_x) * progress
+            //       next_y = start_y + (end_y - start_y) * progress
+            //       // 用直线连接子路径的最后的点到(nextX,nextY)坐标
+            //       ctx.lineTo(next_x, next_y)
+            //       // 绘制路径(所有子路径都会被绘制一次)
+            //       ctx.stroke()
+            //   }
+            //   draw()
+
+            //   if (progress < 1) {
+            //       requestAnimationFrame(step)
+            //   } else {
+            //       console.log('动画执行完毕')
+            //   }
+            // }
+
+            // requestAnimationFrame(step)
+            ctx.closePath()
+            //沿着坐标点顺序的路径绘制直线
+          } 
+          
+        }   
       },
 
     },
@@ -860,28 +1144,28 @@ canvas {
   position: absolute; 
   /* bottom: 10px; 
   left: 15px;  */
-  bottom: 10%;
-  left: 8%;
+  bottom: 5%;
+  left: 6%;
   background: transparent; 
   box-shadow: 0 0 5px #87CEFA; 
   font-size: 80%; 
   /* height: 30px !important; */
   /* width: 80px; */
   height: 12%;
-  width: 50%;
+  width: 40%;
   color: white
 }
 
 .reset {
   position: absolute; 
-   bottom: 10%;
-  left: 57%;
+  bottom: 5%;
+  left: 50%;
   background: transparent; 
   box-shadow: 0 0 5px #87CEFA; 
   font-size: 80%; 
   color: white;
   height: 12%;
-  width: 30%;
+  width: 40%;
 }
 
 .el-button:hover {
