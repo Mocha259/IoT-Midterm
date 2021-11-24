@@ -1,4 +1,6 @@
-# iot_midterm
+# IoT_Midterm
+
+
 
 ## Project setup
 ```
@@ -17,3 +19,7 @@ npm run build
 
 ### Customize configuration
 See [Configuration Reference](https://cli.vuejs.org/config/).
+
+![](D:\OneDrive\桌面\12.png)
+
+## Welcome!
