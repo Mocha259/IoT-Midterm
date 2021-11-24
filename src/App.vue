@@ -16,19 +16,26 @@
       </dv-border-box-8>
 
       <!-- 连接输入区域和网络区域的装饰 -->
-      <dv-decoration-2 class="decoration-2" />
+      <el-button type="primary" style="width: 100px; height: 30px; background-color: transparent !important; position: absolute; left: 2%; top: 5%" @click="reset">重置</el-button>
       
       <!-- 距离优化路径 -->
-      <dv-border-box-8 class="path-optimal"><h3 style="position: absolute; left: 10px; top: 5px">最短路径：{{bestDist}}m</h3><br><h4 style="position: absolute; left: 10px; top: 30px">路径：</h4>
-        <div style="margin-left: 10px; margin-top: 30px; ">
-          {{optimPath}}
+      <dv-border-box-8 class="path-optimal">
+        <h3 v-if="bestDist != 99999 " style="position: absolute; left: 10px; top: 5px">最短路径：{{bestDist}}m</h3>
+        <h3 v-else style="position: absolute; left: 10px; top: 5px">最短路径：MAX</h3>
+        <br>
+        <h4 style="position: absolute; left: 10px; top: 30px">最优遍历顺序：</h4>
+        <div class="path-show" style="width: 600px; height: 40px; margin-left: 10px; margin-top: 30px; overflow-x: auto; overflow-y: hidden;display: flex;">
+          <i v-for="(item, index) in optimPath" :key="index">
+            <h4 v-if="index != (optimPath.length - 1)">{{item}}-</h4>
+            <h4 v-else>{{item}}</h4>
+          </i>
         </div>
       </dv-border-box-8>
 
       <!-- 连接优化路径和输入区域的装饰 -->
       <!-- <dv-decoration-2 :reverse="true" class="decoration-path"  style="position: absolute; top: 20%; right: 0px; height: 200px;" /> -->
 
-      <dv-border-box-8 class="input-area">
+      <!-- <dv-border-box-8 class="input-area">
         <div class="leftSpeed" style="float: left; width: 40%; margin-top: 20px;">
           <span style="position: absolute; left: 17px; top: 20px font-size: 20px; color: white">速度：</span>
         </div>
@@ -36,7 +43,8 @@
           <el-input 
           placeholder="请输入速度"
           v-model="speed"
-          clearable>
+          clearable
+          @blur="checkSpeed">
           </el-input>
         </div><br>
         <div class="leftSpeed" style="float: left; width: 40%; margin-top: 45px;">
@@ -45,10 +53,14 @@
         <div class="interval"><el-input
           placeholder="请输入间距"
           v-model="interval"
-          clearable>
+          clearable
+          @blur="checkInterval">
         </el-input></div>
         <div class="leftInterval" style="float: left; width: 40%; margin-top: 95px;">
-          <span style="position: absolute; left: 5%; top: 50%; ; color: white">起始点：</span>
+          <span style="position: absolute; left: 5%; top: 45%; ; color: white">起始点：</span>
+        </div>
+        <div class="leftInterval" style="float: left; width: 40%; margin-top: 95px;">
+          <span style="position: absolute; left: 5%; top: 63%; ; color: white">终止点：</span>
         </div>
         <div class="startRow">
           <el-select v-model="start_node" placeholder="起点坐标" @change="changeStart">
@@ -77,16 +89,104 @@
         <el-button class="reset" @click="drawTimeOptimalPath">
           时间最优
         </el-button>
+      </dv-border-box-8> -->
+
+
+      <dv-border-box-8 class="input-area">
+        <div class="Speed-div" style="margin-top: 10px; margin-bottom: 5px !important; height: 10%; width: 100%">
+          <div style="float: left; padding-left: 10%; padding-top: 2%; width: 40%">
+            <span style="font-size: 20px; color: white">速度：</span>
+          </div>
+          
+          <div style="float: right; width: 60%; padding-right: 15%">
+            <el-input 
+            placeholder="请输入速度"
+            v-model="speed"
+            clearable
+            @blur="checkSpeed">
+            </el-input>
+          </div>
+        </div>
+        
+        <div class="Interval-div" style="height: 10%; width: 100%">
+          <div style="float:left; padding-left: 10%; width: 40%; height: 100%; margin-top: 8%">
+            <span style="font-size: 20px; color: white;">间隔：</span>
+          </div>
+          
+          <div style="float:right; width: 60%; padding-right: 15%; margin-top: 3%">
+            <el-input
+            placeholder="请输入间距"
+            v-model="interval"
+            clearable
+            @blur="checkInterval">
+            </el-input>
+          </div>
+        </div>
+        
+        <div class="start-point" style="height: 10%; width: 100%">
+          <div style="float: left; height: 100%; width: 40%; margin-top: 10%; padding-left: 8%;">
+            <span style="font-size: 20px; color: white;">起始点：</span>
+          </div>
+          <div style="float:right; width: 60%; padding-right: 10%; padding-top: 5%">
+            <el-select v-model="start_node" placeholder="起点坐标" @change="changeStart">
+              <el-option
+                v-for="item in checkList"
+                :key="item"
+                :label="item"
+                :value="item">
+              </el-option>
+            </el-select>
+          </div>
+        </div>
+
+
+        <div class="end-point" style="height: 10%; width: 100%">
+          <div style="float: left; height: 100%; width: 40%; margin-top: 10%; padding-left: 8%;">
+            <span style="font-size: 20px; color: white;">终止点：</span>
+          </div>
+          <div style="float:right; width: 60%; padding-right: 10%; padding-top: 5%">
+            <el-select v-model="end_node" placeholder="终点坐标">
+              <el-option
+                v-for="item in endPointList"
+                :key="item"
+                :label="item"
+                :value="item">
+              </el-option>
+            </el-select>
+          </div>
+        </div>
+        
+        
+        <div class="button" style="height: 20%; width: 100%">
+          <div style="float: left; width: 50%; height: 100%; padding-left: 10%; padding-top: 5%">
+            <el-button class="dist-button" @click="drawDistOptimalPath">
+              距离最优
+            </el-button>
+          </div>
+          <div style="float: right; width: 50%; height: 100%; padding-right: 8%; padding-top: 5%">
+            <el-button class="time-button" @click="drawTimeOptimalPath">
+              时间最优
+            </el-button>
+          </div>
+
+        </div>
+        
       </dv-border-box-8>
 
       <!-- 连接优化路径和输入区域的装饰 -->
       <!-- <dv-decoration-2 :reverse="true" class="decoration-time" /> -->
       
       <!-- 时间优化路径 -->
-      <dv-border-box-8 class="time-optimal"><h3 style="position: absolute; left: 10px; top: 5px">最短时间：{{bestTime}}s</h3>
-      <br><h4 style="position: absolute; left: 10px; top: 30px">路径：</h4>
-        <div style="margin-left: 10px; margin-top: 30px; ">
-          {{optimTime}}
+      <dv-border-box-8 class="time-optimal">
+        <h3 v-if="bestTime != 99999" style="position: absolute; left: 10px; top: 5px">最短时间：{{bestTime}}s</h3>
+        <h3 v-else style="position: absolute; left: 10px; top: 5px">最短时间：MAX</h3>
+        <br>
+        <h4 style="position: absolute; left: 10px; top: 30px">最优遍历顺序：</h4>
+        <div class="path-show" style="width: 600px; height: 40px; margin-left: 10px; margin-top: 30px; overflow-x: auto; overflow-y: hidden;display: flex;">
+          <i v-for="(item, index) in optimTime" :key="index">
+            <h4 v-if="index != (optimTime.length - 1)">{{item}}-</h4>
+            <h4 v-else>{{item}}</h4>
+          </i>
         </div>
       </dv-border-box-8>
 
@@ -107,28 +207,250 @@ export default {
         // realSpeed: parseFloat(speed),
         interval: 5.0,
         // realIntercal: parseInt(interval),
-         isRouterAlive: true,
+        isRouterAlive: true,
         input: '',
         checkList: [],//记录选中的结点
         distOptInfo: [],
         timeOptInfo: [],
         row: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'],
         endPointList: [],
-        rowOfStart: '',
-        colOfStart: '',
-        rowOfEnd: '',
-        colOfEnd: '',
         start_node: '',
         end_node: '',
         optimPath: [],
         optimTime: [],
         bestDist: 99999,
         bestTime: 99999,
-        arrow: '-->',
+        count: 3,
         tmp: {},
+        test: ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H','A', 'B', 'C', 'D', 'E', 'F', 'G', 'H']
       }
     },
     methods: {
+      
+      // permutation(a) {
+      //     // 保存最终输出结果
+      //   let result = [];
+        
+      //   // 定义 m 值默认等于 n，即全排列
+      //   let m = a.length;
+        
+      //   // 定义递归函数保存结果到数组中
+      //   // _a 为输入数组，
+      //   // tmpResult 为保存单个情况结果的数组
+      //   function recur(_a, tmpResult = []) {
+      //       if (tmpResult.length === m) {
+            
+      //           // 结果达到 m 个时保存结果，
+      //           // 停止递归并进入下一次遍历
+      //           result.push(tmpResult);
+                
+      //       } else {
+      //           for (let i = 0; i < _a.length; i++) {
+                    
+      //               // 复制一份输入数组，防止引用值被改变
+      //               let tmpA = _a.concat();
+                
+      //               // 复制一份保存结果的数组，防止每次遍历相互影响
+      //               let _tmpResult = tmpResult.concat();
+                    
+      //               // 保存当前遍历值
+      //               _tmpResult.push(tmpA[i]);
+                    
+      //               // 删除当前遍历值，传递参数进入下一层递归
+      //               tmpA.splice(i, 1);
+      //               recur(tmpA, _tmpResult);
+      //           }
+      //       }
+      //   }
+      //   // 开始执行递归，然后返回最后结果
+      //   recur(a);
+      //   return result;
+      // },
+      // distOptimalPath(){
+      //   let self = this
+      //   class Graph {
+      //     constructor() {
+      //         this.edges = {};
+      //         this.nodes = [];
+      //         this.all_path = [];
+      //     }
+
+      //     addNode(node) {
+      //         this.nodes.push(node);
+      //         this.edges[node] = [];
+      //     }
+
+      //     addEdge(node1, node2, weight = 1) {
+      //         this.edges[node1].push({ node: node2, weight: weight });
+      //         this.edges[node2].push({ node: node1, weight: weight });
+      //     }
+
+      //     addDirectedEdge(node1, node2, weight = 1) {
+      //         this.edges[node1].push({ node: node2, weight: weight });
+      //     }
+
+      //     display() {
+      //         let graph = "";
+      //         this.nodes.forEach(node => {
+      //           graph += node + "->" + this.edges[node].map(n => n.weight + '-' + n.node ).join(", ") + "\n";
+      //         });
+      //         console.log(graph);
+      //     }
+
+      //     getDistOptimalPath() {
+      //       var index_of_start = this.nodes.indexOf(self.start_node)
+      //       this.nodes.splice(index_of_start, 1)
+      //       var index_of_end   = this.nodes.indexOf(self.end_node)
+      //       this.nodes.splice(index_of_end, 1)
+            
+      //     }
+      //   }
+
+      //   // 创建图并添加点和边
+      //   var graph = new Graph()
+      //   graph.nodes.splice(0, graph.nodes.length)
+      //   for(var i = 0; i < this.checkList.length; i++){
+      //       graph.addNode(this.checkList[i])
+      //   }
+      //   for(var i = 0; i < this.distOptInfo.length; i++){
+      //     graph.addEdge(this.distOptInfo[i].start, this.distOptInfo[i].end, this.distOptInfo[i].dis)
+      //   }
+      //   // console.log('grapth.nodes:' + graph.nodes)
+      //   //剔除起点和终点，对中间结点全排列
+      //   graph.getDistOptimalPath()
+      //   // console.log('grapth.nodes after filter:' + graph.nodes)  
+      //   graph.all_path = this.permutation(graph.nodes)
+      //     // 把起点和终点放回去
+      //   var best_dist = 999999
+      //   var best_path_index = 0
+        
+      //   for(var i = 0; i < graph.all_path.length; i++){
+      //     // console.log('grall.all_path' + i + ': ' + graph.all_path[i])
+      //     graph.all_path[i].push(this.end_node)
+      //     graph.all_path[i].unshift(this.start_node)
+          
+      //     var tmp_dist = 0
+      //     for(var j = 0; j < graph.all_path[i].length - 1; j++){
+            
+      //       if(tmp_dist > best_dist){
+      //         continue
+      //       }
+      //       for(var k = 0; k < graph.edges[graph.all_path[i][j]].length; k++){
+      //         if(graph.edges[graph.all_path[i][j]][k].node == graph.all_path[i][j + 1]){
+      //           tmp_dist += graph.edges[graph.all_path[i][j]][k].weight
+      //           break
+      //         } //endif
+      //       }
+      //     }//end of for loop
+
+      //     if (tmp_dist < best_dist){
+      //       best_dist = tmp_dist
+      //       best_path_index = i
+      //     }//endif
+      //   }
+
+      //   this.bestDist = best_dist
+      //   this.optimPath.splice(0, this.optimPath.length)
+      //   for(var i = 0; i < graph.all_path[best_path_index].length; i++){
+      //     this.optimPath.push(graph.all_path[best_path_index][i])
+      //   }
+      
+
+      
+      // console.log('best path: ' + this.optimPath)
+      // console.log('best dist: ' + best_dist)
+        
+      // },
+      // timeOptimalPath(){
+      //   let self = this
+      //   class Graph {
+      //     constructor() {
+      //         this.edges = {};
+      //         this.nodes = [];
+      //         this.all_path = [];
+      //     }
+
+      //     addNode(node) {
+      //         this.nodes.push(node);
+      //         this.edges[node] = [];
+      //     }
+
+      //     addEdge(node1, node2, weight = 1) {
+      //         this.edges[node1].push({ node: node2, weight: weight });
+      //         this.edges[node2].push({ node: node1, weight: weight });
+      //     }
+
+      //     addDirectedEdge(node1, node2, weight = 1) {
+      //         this.edges[node1].push({ node: node2, weight: weight });
+      //     }
+
+      //     display() {
+      //         let graph = "";
+      //         this.nodes.forEach(node => {
+      //           graph += node + "->" + this.edges[node].map(n => n.weight + '-' + n.node ).join(", ") + "\n";
+      //         });
+      //         console.log(graph);
+      //     }
+
+      //     getDistOptimalPath() {
+      //       var index_of_start = this.nodes.indexOf(self.start_node)
+      //       this.nodes.splice(index_of_start, 1)
+      //       var index_of_end   = this.nodes.indexOf(self.end_node)
+      //       this.nodes.splice(index_of_end, 1)
+            
+      //     }
+          
+
+      //   }
+      //   // 创建图并添加点和边
+      //   var graph = new Graph()
+      //   for(var i = 0; i < this.checkList.length; i++){
+      //       graph.addNode(this.checkList[i])
+      //   }
+      //   for(var i = 0; i < this.timeOptInfo.length; i++){
+      //     graph.addEdge(this.timeOptInfo[i].start, this.timeOptInfo[i].end, this.timeOptInfo[i].dis)
+      //   }
+        
+      //   //剔除起点和终点，对中间结点全排列
+      //   graph.getDistOptimalPath()
+      //   graph.all_path = this.permutation(graph.nodes)
+
+      //   // 把起点和终点放回去
+      //   var best_dist = 999999
+      //   var best_path_index = 0
+      //   for(var i = 0; i < graph.all_path.length; i++){
+      //     graph.all_path[i].push(this.end_node)
+      //     graph.all_path[i].unshift(this.start_node)
+          
+      //     var tmp_dist = 0
+      //     for(var j = 0; j < graph.all_path[i].length - 1; j++){
+      //       if(tmp_dist > best_dist){
+      //         continue
+      //       }
+      //       for(var k = 0; k < graph.edges[graph.all_path[i][j]].length; k++){
+      //         if(graph.edges[graph.all_path[i][j]][k].node == graph.all_path[i][j + 1]){
+      //           tmp_dist += graph.edges[graph.all_path[i][j]][k].weight
+      //           break
+      //         } //endif
+      //       }
+            
+      //     }//end of for loop
+          
+      //     if (tmp_dist < best_dist){
+      //       best_dist = tmp_dist
+      //       best_path_index = i
+      //     }//endif
+      //   }
+
+      //   this.bestTime = best_dist
+      //   this.optimTime.splice(0, this.optimTime.length)
+      //   for(var i = 0; i < graph.all_path[best_path_index].length; i++){
+      //     this.optimTime.push(graph.all_path[best_path_index][i])
+      //   }
+      //   console.log('best path: ' + this.optimTime)
+      //   console.log('best time: ' + best_dist)
+
+      // },
       getDistOptimalInfo() {
         for(var i = 0; i < this.checkList.length - 1; i++){
           for( var j = i + 1; j < this.checkList.length; j++){
@@ -181,232 +503,6 @@ export default {
           }
         }
       },
-      permutation(a) {
-          // 保存最终输出结果
-        let result = [];
-        
-        // 定义 m 值默认等于 n，即全排列
-        let m = a.length;
-        
-        // 定义递归函数保存结果到数组中
-        // _a 为输入数组，
-        // tmpResult 为保存单个情况结果的数组
-        function recur(_a, tmpResult = []) {
-            if (tmpResult.length === m) {
-            
-                // 结果达到 m 个时保存结果，
-                // 停止递归并进入下一次遍历
-                result.push(tmpResult);
-                
-            } else {
-                for (let i = 0; i < _a.length; i++) {
-                    
-                    // 复制一份输入数组，防止引用值被改变
-                    let tmpA = _a.concat();
-                
-                    // 复制一份保存结果的数组，防止每次遍历相互影响
-                    let _tmpResult = tmpResult.concat();
-                    
-                    // 保存当前遍历值
-                    _tmpResult.push(tmpA[i]);
-                    
-                    // 删除当前遍历值，传递参数进入下一层递归
-                    tmpA.splice(i, 1);
-                    recur(tmpA, _tmpResult);
-                }
-            }
-        }
-        // 开始执行递归，然后返回最后结果
-        recur(a);
-        return result;
-      },
-      distOptimalPath(){
-        let self = this
-        class Graph {
-          constructor() {
-              this.edges = {};
-              this.nodes = [];
-              this.all_path = [];
-          }
-
-          addNode(node) {
-              this.nodes.push(node);
-              this.edges[node] = [];
-          }
-
-          addEdge(node1, node2, weight = 1) {
-              this.edges[node1].push({ node: node2, weight: weight });
-              this.edges[node2].push({ node: node1, weight: weight });
-          }
-
-          addDirectedEdge(node1, node2, weight = 1) {
-              this.edges[node1].push({ node: node2, weight: weight });
-          }
-
-          display() {
-              let graph = "";
-              this.nodes.forEach(node => {
-                graph += node + "->" + this.edges[node].map(n => n.weight + '-' + n.node ).join(", ") + "\n";
-              });
-              console.log(graph);
-          }
-
-          getDistOptimalPath() {
-            var index_of_start = this.nodes.indexOf(self.start_node)
-            this.nodes.splice(index_of_start, 1)
-            var index_of_end   = this.nodes.indexOf(self.end_node)
-            this.nodes.splice(index_of_end, 1)
-            
-          }
-        }
-
-        // 创建图并添加点和边
-        var graph = new Graph()
-        graph.nodes.splice(0, graph.nodes.length)
-        for(var i = 0; i < this.checkList.length; i++){
-            graph.addNode(this.checkList[i])
-        }
-        for(var i = 0; i < this.distOptInfo.length; i++){
-          graph.addEdge(this.distOptInfo[i].start, this.distOptInfo[i].end, this.distOptInfo[i].dis)
-        }
-        // console.log('grapth.nodes:' + graph.nodes)
-        //剔除起点和终点，对中间结点全排列
-        graph.getDistOptimalPath()
-        // console.log('grapth.nodes after filter:' + graph.nodes)  
-        graph.all_path = this.permutation(graph.nodes)
-          // 把起点和终点放回去
-        var best_dist = 999999
-        var best_path_index = 0
-        
-        for(var i = 0; i < graph.all_path.length; i++){
-          // console.log('grall.all_path' + i + ': ' + graph.all_path[i])
-          graph.all_path[i].push(this.end_node)
-          graph.all_path[i].unshift(this.start_node)
-          
-          var tmp_dist = 0
-          for(var j = 0; j < graph.all_path[i].length - 1; j++){
-            
-            if(tmp_dist > best_dist){
-              continue
-            }
-            for(var k = 0; k < graph.edges[graph.all_path[i][j]].length; k++){
-              if(graph.edges[graph.all_path[i][j]][k].node == graph.all_path[i][j + 1]){
-                tmp_dist += graph.edges[graph.all_path[i][j]][k].weight
-                break
-              } //endif
-            }
-          }//end of for loop
-
-          if (tmp_dist < best_dist){
-            best_dist = tmp_dist
-            best_path_index = i
-          }//endif
-        }
-
-        this.bestDist = best_dist
-        this.optimPath.splice(0, this.optimPath.length)
-        for(var i = 0; i < graph.all_path[best_path_index].length; i++){
-          this.optimPath.push(graph.all_path[best_path_index][i])
-        }
-      
-
-      
-      console.log('best path: ' + this.optimPath)
-      console.log('best dist: ' + best_dist)
-        
-      },
-      timeOptimalPath(){
-        let self = this
-        class Graph {
-          constructor() {
-              this.edges = {};
-              this.nodes = [];
-              this.all_path = [];
-          }
-
-          addNode(node) {
-              this.nodes.push(node);
-              this.edges[node] = [];
-          }
-
-          addEdge(node1, node2, weight = 1) {
-              this.edges[node1].push({ node: node2, weight: weight });
-              this.edges[node2].push({ node: node1, weight: weight });
-          }
-
-          addDirectedEdge(node1, node2, weight = 1) {
-              this.edges[node1].push({ node: node2, weight: weight });
-          }
-
-          display() {
-              let graph = "";
-              this.nodes.forEach(node => {
-                graph += node + "->" + this.edges[node].map(n => n.weight + '-' + n.node ).join(", ") + "\n";
-              });
-              console.log(graph);
-          }
-
-          getDistOptimalPath() {
-            var index_of_start = this.nodes.indexOf(self.start_node)
-            this.nodes.splice(index_of_start, 1)
-            var index_of_end   = this.nodes.indexOf(self.end_node)
-            this.nodes.splice(index_of_end, 1)
-            
-          }
-          
-
-        }
-        // 创建图并添加点和边
-        var graph = new Graph()
-        for(var i = 0; i < this.checkList.length; i++){
-            graph.addNode(this.checkList[i])
-        }
-        for(var i = 0; i < this.timeOptInfo.length; i++){
-          graph.addEdge(this.timeOptInfo[i].start, this.timeOptInfo[i].end, this.timeOptInfo[i].dis)
-        }
-        
-        //剔除起点和终点，对中间结点全排列
-        graph.getDistOptimalPath()
-        graph.all_path = this.permutation(graph.nodes)
-
-        // 把起点和终点放回去
-        var best_dist = 999999
-        var best_path_index = 0
-        for(var i = 0; i < graph.all_path.length; i++){
-          graph.all_path[i].push(this.end_node)
-          graph.all_path[i].unshift(this.start_node)
-          
-          var tmp_dist = 0
-          for(var j = 0; j < graph.all_path[i].length - 1; j++){
-            if(tmp_dist > best_dist){
-              continue
-            }
-            for(var k = 0; k < graph.edges[graph.all_path[i][j]].length; k++){
-              if(graph.edges[graph.all_path[i][j]][k].node == graph.all_path[i][j + 1]){
-                tmp_dist += graph.edges[graph.all_path[i][j]][k].weight
-                break
-              } //endif
-            }
-            
-          }//end of for loop
-          
-          if (tmp_dist < best_dist){
-            best_dist = tmp_dist
-            best_path_index = i
-          }//endif
-        }
-
-        this.bestTime = best_dist
-        this.optimTime.splice(0, this.optimTime.length)
-        for(var i = 0; i < graph.all_path[best_path_index].length; i++){
-          this.optimTime.push(graph.all_path[best_path_index][i])
-        }
-        console.log('best path: ' + this.optimTime)
-        console.log('best time: ' + best_dist)
-
-        
-      },
-      
       getElementPagePosition(element){
         //计算x坐标
         var actualLeft = element.offsetLeft;
@@ -468,21 +564,311 @@ export default {
       },
       reset(){
           this.checkList.splice(0, this.checkList.length)
-          this.selectedRow.splice(0, this.selectedRow.length)
-          this.selectedCol.splice(0, this.selectedCol.length)
+          this.optimPath.splice(0, this.optimPath.length)
+          this.optimTime.splice(0, this.optimTime.length)
           this.speed = 5
           this.interval = 5
           location.reload();
       },
+      getDistOptimalPath(){
+        let self = this
+        class DP{
+          constructor() {
+            this.dp = []
+            this.visited = []
+            this.paths = []
+          }
+          getMinDist(s, init){
+            if(this.visited[s][init] != -1){
+              return this.visited[s][init]
+            }
+            if(s == (1 << (self.checkList.length - 1)))
+              return this.dp[self.checkList.length - 1][init]
+            var min_length = 1000000
+            var min_index = 0
+            for(var i = 0; i < self.checkList.length - 1; i++){
+              if(s & (1 << i)){
+                var s_w = s & (~(1 << i))
+                var ret = this.getMinDist(s_w, i)
+                if((ret + this.dp[i][init]) < min_length){
+                  min_length = ret + this.dp[i][init]
+                  min_index = i
+                }
+              }
+            }
+            this.paths[s][init] = min_index
+            this.visited[s][init] = min_length
+            return min_length
+          }
+
+          show(){
+            console.log(this.dp)
+            console.log(this.visited)
+            console.log(this.paths)
+          }
+        }
+        
+        class Graph {
+          constructor() {
+              this.edges = {};
+              this.nodes = [];
+              this.all_path = [];
+          }
+
+          addNode(node) {
+              this.nodes.push(node);
+              this.edges[node] = [];
+          }
+
+          addEdge(node1, node2, weight = 1) {
+              this.edges[node1].push({ node: node2, weight: weight });
+              this.edges[node2].push({ node: node1, weight: weight });
+          }
+
+          addDirectedEdge(node1, node2, weight = 1) {
+              this.edges[node1].push({ node: node2, weight: weight });
+          }
+
+        }
+
+        // 创建图并添加点和边
+        var graph = new Graph()
+        graph.nodes.splice(0, graph.nodes.length)
+        for(var i = 0; i < this.checkList.length; i++){
+            graph.addNode(this.checkList[i])
+        }
+        for(var i = 0; i < this.distOptInfo.length; i++){
+          graph.addEdge(this.distOptInfo[i].start, this.distOptInfo[i].end, this.distOptInfo[i].dis)
+        }
+
+        var TSP_MAX = this.checkList.length 
+        var sol = new DP()
+        sol.dp = new Array(TSP_MAX)
+        for(var i = 0; i < sol.dp.length; i++){
+          sol.dp[i] = new Array(TSP_MAX)
+          for(var j = 0; j < sol.dp[i].length; j++){
+            sol.dp[i][j] = 0
+          }
+        }
+        sol.visited = new Array(2 ** TSP_MAX)
+        sol.paths = new Array(2 ** TSP_MAX)
+        for(var i = 0; i < sol.visited.length; i++){
+          sol.visited[i] = new Array(TSP_MAX)
+          sol.paths[i] = new Array(TSP_MAX)
+          for(var j = 0; j < sol.visited[i].length; j++){
+            sol.visited[i][j] = -1.0
+          } // end for(var j = 0; j < visited[i].length; j++)
+        } // end for(var i = 0; i < visited.length; i++)
+
+        
+
+        var all_nodes = []
+        var index = 1
+        for(var i = 0; i < this.checkList.length; i++){
+          if(this.checkList[i] != this.start_node && this.checkList[i] != this.end_node){
+            all_nodes.push({index: index++, node: this.checkList[i]})
+          }
+        }
+        all_nodes.unshift({index: 0, node: this.start_node})
+        all_nodes.push({index: this.checkList.length - 1, node: this.end_node})
+
+        for(var i = 0; i < all_nodes.length; i++){
+          var node_1 = all_nodes[i]
+          for(var j = 0; j < all_nodes.length; j++){
+              var node_2 = all_nodes[j]
+              if(i == j) sol.dp[i][j] = 0
+              else{
+                for(var k = 0; k < graph.edges[node_1.node].length; k++){
+                  if(graph.edges[node_1.node][k].node == node_2.node){
+                    sol.dp[i][j] = graph.edges[node_1.node][k].weight
+                    break
+                  }
+                }
+              }
+          }
+        }
+
+        var s = 0
+        for(var i = 1; i < this.checkList.length; i++)
+            s = s | (1 << i)
+        this.bestDist = sol.getMinDist(s, 0)
+        this.bestDist = this.bestDist.toFixed(2)
+        var path_ret = [0]
+        var index = 0
+        for(var i = 0; i < this.checkList.length - 2; i++){
+          index = sol.paths[s][index]
+          path_ret.push(index)
+          s = s & (~(1 << index))
+        }
+
+        path_ret.push(this.checkList.length - 1)
+
+        this.optimPath.splice(0, this.optimPath.length)
+        for(var i = 0; i < path_ret.length; i++){
+          this.optimPath.push(all_nodes[path_ret[i]].node)
+        }
+        
+      },
+      getTimeOptimalPath(){
+        let self = this
+        class DP{
+          constructor() {
+            this.dp = []
+            this.visited = []
+            this.paths = []
+          }
+          getMinDist(s, init){
+            if(this.visited[s][init] != -1){
+              return this.visited[s][init]
+            }
+            if(s == (1 << (self.checkList.length - 1)))
+              return this.dp[self.checkList.length - 1][init]
+            var min_length = 1000000
+            var min_index = 0
+            for(var i = 0; i < self.checkList.length - 1; i++){
+              if(s & (1 << i)){
+                var s_w = s & (~(1 << i))
+                var ret = this.getMinDist(s_w, i)
+                if((ret + this.dp[i][init]) < min_length){
+                  min_length = ret + this.dp[i][init]
+                  min_index = i
+                }
+              }
+            }
+            this.paths[s][init] = min_index
+            this.visited[s][init] = min_length
+            return min_length
+          }
+
+          show(){
+            console.log(this.dp)
+            console.log(this.visited)
+            console.log(this.paths)
+          }
+        }
+        
+        class Graph {
+          constructor() {
+              this.edges = {};
+              this.nodes = [];
+              this.all_path = [];
+          }
+
+          addNode(node) {
+              this.nodes.push(node);
+              this.edges[node] = [];
+          }
+
+          addEdge(node1, node2, weight = 1) {
+              this.edges[node1].push({ node: node2, weight: weight });
+              this.edges[node2].push({ node: node1, weight: weight });
+          }
+
+          addDirectedEdge(node1, node2, weight = 1) {
+              this.edges[node1].push({ node: node2, weight: weight });
+          }
+        }
+
+        // 创建图并添加点和边
+        var graph = new Graph()
+        graph.nodes.splice(0, graph.nodes.length)
+        for(var i = 0; i < this.checkList.length; i++){
+            graph.addNode(this.checkList[i])
+        }
+        for(var i = 0; i < this.distOptInfo.length; i++){
+          graph.addEdge(this.timeOptInfo[i].start, this.timeOptInfo[i].end, this.timeOptInfo[i].dis)
+        }
+
+        var TSP_MAX = this.checkList.length 
+        var sol = new DP()
+        sol.dp = new Array(TSP_MAX)
+        for(var i = 0; i < sol.dp.length; i++){
+          sol.dp[i] = new Array(TSP_MAX)
+          for(var j = 0; j < sol.dp[i].length; j++){
+            sol.dp[i][j] = 0
+          }
+        }
+        sol.visited = new Array(2 ** TSP_MAX)
+        sol.paths = new Array(2 ** TSP_MAX)
+        for(var i = 0; i < sol.visited.length; i++){
+          sol.visited[i] = new Array(TSP_MAX)
+          sol.paths[i] = new Array(TSP_MAX)
+          for(var j = 0; j < sol.visited[i].length; j++){
+            sol.visited[i][j] = -1.0
+          } // end for(var j = 0; j < visited[i].length; j++)
+        } // end for(var i = 0; i < visited.length; i++)
+
+        var all_nodes = []
+        var index = 1
+        for(var i = 0; i < this.checkList.length; i++){
+          if(this.checkList[i] != this.start_node && this.checkList[i] != this.end_node){
+            all_nodes.push({index: index++, node: this.checkList[i]})
+          }
+        }
+        all_nodes.unshift({index: 0, node: this.start_node})
+        all_nodes.push({index: this.checkList.length - 1, node: this.end_node})
+
+        for(var i = 0; i < all_nodes.length; i++){
+          var node_1 = all_nodes[i]
+          for(var j = 0; j < all_nodes.length; j++){
+            var node_2 = all_nodes[j]
+            if(i == j) sol.dp[i][j] = 0
+            else{
+              for(var k = 0; k < graph.edges[node_1.node].length; k++){
+                if(graph.edges[node_1.node][k].node == node_2.node){
+                  sol.dp[i][j] = graph.edges[node_1.node][k].weight
+                  break
+                }
+              }
+            }
+          }
+        }
+
+        var s = 0
+        for(var i = 1; i < this.checkList.length; i++)
+            s = s | (1 << i)
+        this.bestTime = sol.getMinDist(s, 0)
+        this.bestTime= this.bestTime.toFixed(2)
+        var path_ret = [0]
+        var index = 0
+        for(var i = 0; i < this.checkList.length - 2; i++){
+          index = sol.paths[s][index]
+          path_ret.push(index)
+          s = s & (~(1 << index))
+        }
+
+        path_ret.push(this.checkList.length - 1)
+
+        this.optimTime.splice(0, this.optimTime.length)
+        for(var i = 0; i < path_ret.length; i++){
+          this.optimTime.push(all_nodes[path_ret[i]].node)
+        }
+        
+      },
       drawDistOptimalPath(){
+        if(this.checkList.length < 3){
+          this.$message.error('请选择至少三个点！')
+          // location.reload()
+          return
+        }
+        if(this.start_node == '' || this.end_node == ''){
+          this.$message.error('请选择起点和终点！')
+          // location.reload()
+          return
+        }
+        
+
         this.optimPath.splice(0, this.optimPath.length)
         this.distOptInfo.splice(0, this.distOptInfo.length)
         this.getDistOptimalInfo()       //初始化图节点的信息
+        
         console.log('优化目标：距离最优')
         console.log('基本信息：speed: ' + this.speed + ' interval: ' + this.interval)
         console.log('所有结点：' + this.checkList)
         console.log('起点：' + this.start_node + ' ---> 终点：' + this.end_node)
-        this.distOptimalPath()          //获取由起点至终点的最佳遍历路径
+        this.getDistOptimalPath()
+        console.log('最优遍历顺序：' + this.optimPath)
+        // this.distOptimalPath()          //获取由起点至终点的最佳遍历路径
         //扩充出实际路径
         var actualPath = []
         for(var i = 0; i < this.optimPath.length; i++)
@@ -532,8 +918,7 @@ export default {
         if(canvas.getContext){
           var offset_x = 5
           var offset_y = 6.5
-          //97 164
-          //365 500
+
           for(var i = 0; i < actualPath.length - 1; i++){
             var element = document.getElementById(actualPath[i])
             var start_x = this.getElementPagePosition(element).x + offset_x
@@ -543,7 +928,6 @@ export default {
             var end_x = this.getElementPagePosition(element).x + offset_x
             var end_y = this.getElementPagePosition(element).y + offset_y
 
-            // console.log('起点：(' + start_x + ',' + start_y + ')-->终点：('+ end_x + ',' + end_y + ')')
             var ctx = canvas.getContext("2d")
             ctx.beginPath()
             
@@ -551,74 +935,32 @@ export default {
             ctx.lineCap = "round"
             ctx.lineJoin = "round"
             ctx.lineWidth = 5
-            // ctx.shadowColor = 'rgba(255,255,0,1)';
-            // ctx.shadowBlur = 20;
-            // ctx.shadowOffsetX = 10100;
-            // ctx.shadowOffsetY = 10100;
+
             ctx.moveTo(start_x, start_y)
             ctx.lineTo(end_x, end_y)
             ctx.stroke()
             ctx.closePath()
-
-            // ctx.strokeStyle = red
-            // ctx.lineWidth = 2
-            // ctx.moveTo(97, 164)
-            // ctx.lineTo(365, 500)
-            // ctx.stroke()
-            // let next_x
-            // let next_y
-
-            // // 第一帧执行的时间
-            // let startTime;
-            // // 期望动画持续的时间
-            // const duration = 1000
-            // var ctx = canvas.getContext("2d")
-            // ctx.beginPath()
-            // ctx.moveTo(start_x, start_y)
-            // ctx.strokeStyle = `rgba(${81}, ${160}, ${255},${0.25})`
-            // ctx.lineWidth = 4
-            // const step = (currentTime) => {
-            //   // 第一帧绘制时记录下开始的时间
-            //   !startTime && (startTime = currentTime)
-            //   // 已经过去的时间(ms)
-            //   const timeElapsed = currentTime - startTime
-            //   // 动画执行的进度 {0,1}
-            //   const progress = Math.min(timeElapsed / duration, 1)
-
-            //   // 绘制方法
-            //   const draw = () => {
-            //       // 计算这一帧中线段应该到达的坐标点
-            //       next_x = start_x + (end_x - start_x) * progress
-            //       next_y = start_y + (end_y - start_y) * progress
-            //       // 用直线连接子路径的最后的点到(nextX,nextY)坐标
-            //       ctx.lineTo(next_x, next_y)
-            //       // 绘制路径(所有子路径都会被绘制一次)
-            //       ctx.stroke()
-            //   }
-            //   draw()
-
-            //   if (progress < 1) {
-            //       requestAnimationFrame(step)
-            //   } else {
-            //       console.log('动画执行完毕')
-            //   }
-            // }
-
-            // requestAnimationFrame(step)
-            //沿着坐标点顺序的路径绘制直线
           } 
           
         }   
       },
       drawTimeOptimalPath(){
+        if(this.checkList.length < 3){
+          this.$message.error('请选择至少三个点！')
+          return
+        }
+        if(this.start_node == '' || this.end_node == ''){
+          this.$message.error('请选择起点和终点！')
+          return
+        }
         
-        this.timeOptInfo.splice(0, this.timeOptInfo.length)
         this.timeOptInfo.splice(0, this.timeOptInfo.length)
         this.getTimeOptimalInfo()       //初始化图节点的信息
         console.log('优化目标：时间最优')
         console.log('基本信息：speed: ' + this.speed + ' interval: ' + this.interval)
         console.log('起点：' + this.start_node + '---> 终点：' + this.end_node)
-        this.timeOptimalPath()          //获取由起点至终点的最佳遍历路径
+        this.getTimeOptimalPath()          //获取由起点至终点的最佳遍历路径
+        console.log('最优遍历顺序：' + this.optimTime)
         // console.log('最短时间：' + this.bestTime)
         var actualPath = []
         
@@ -671,21 +1013,16 @@ export default {
         if(canvas.getContext){
           var offset_x = 5
           var offset_y = 6.5
-          //97 164
-          //365 500
+
           for(var i = 0; i < actualPath.length - 1; i++){
             var element = document.getElementById(actualPath[i])
             var start_x = this.getElementPagePosition(element).x + offset_x
             var start_y = this.getElementPagePosition(element).y + offset_y
-            // var start_x = this.getElementViewPosition(element).x + offset_x
-            // var start_y = this.getElementViewPosition(element).y + offset_y
+
             element = document.getElementById(actualPath[i + 1])
             var end_x = this.getElementPagePosition(element).x + offset_x
             var end_y = this.getElementPagePosition(element).y + offset_y
-            // var end_x = this.getElementViewPosition(element).x + offset_x
-            // var end_y = this.getElementViewPosition(element).y + offset_y
-            
-            // console.log('起点：(' + start_x + ',' + start_y + ')-->终点：('+ end_x + ',' + end_y + ')')
+
             var ctx = canvas.getContext("2d")
             ctx.beginPath()
             
@@ -693,67 +1030,25 @@ export default {
             ctx.lineCap = "round"
             ctx.lineJoin = "round"
             ctx.lineWidth = 5
-            // ctx.shadowColor = 'rgba(255,255,0,1)';
-            // ctx.shadowBlur = 20;
-            // ctx.shadowOffsetX = 10100;
-            // ctx.shadowOffsetY = 10100;
+
             ctx.moveTo(start_x, start_y)
             ctx.lineTo(end_x, end_y)
             ctx.stroke()
             ctx.closePath()
-
-            // ctx.strokeStyle = red
-            // ctx.lineWidth = 2
-            // ctx.moveTo(97, 164)
-            // ctx.lineTo(365, 500)
-            // ctx.stroke()
-            // let next_x
-            // let next_y
-
-            // // 第一帧执行的时间
-            // let startTime;
-            // // 期望动画持续的时间
-            // const duration = 1000
-            // var ctx = canvas.getContext("2d")
-            // ctx.beginPath()
-            // ctx.moveTo(start_x, start_y)
-            // ctx.strokeStyle = `rgba(${81}, ${160}, ${255},${0.25})`
-            // ctx.lineWidth = 4
-            // const step = (currentTime) => {
-            //   // 第一帧绘制时记录下开始的时间
-            //   !startTime && (startTime = currentTime)
-            //   // 已经过去的时间(ms)
-            //   const timeElapsed = currentTime - startTime
-            //   // 动画执行的进度 {0,1}
-            //   const progress = Math.min(timeElapsed / duration, 1)
-
-            //   // 绘制方法
-            //   const draw = () => {
-            //       // 计算这一帧中线段应该到达的坐标点
-            //       next_x = start_x + (end_x - start_x) * progress
-            //       next_y = start_y + (end_y - start_y) * progress
-            //       // 用直线连接子路径的最后的点到(nextX,nextY)坐标
-            //       ctx.lineTo(next_x, next_y)
-            //       // 绘制路径(所有子路径都会被绘制一次)
-            //       ctx.stroke()
-            //   }
-            //   draw()
-
-            //   if (progress < 1) {
-            //       requestAnimationFrame(step)
-            //   } else {
-            //       console.log('动画执行完毕')
-            //   }
-            // }
-
-            // requestAnimationFrame(step)
-            ctx.closePath()
-            //沿着坐标点顺序的路径绘制直线
           } 
           
         }   
       },
-
+      checkSpeed(){
+        if(this.speed == null || this.speed == 0 ){
+          this.$message.error('请检查速度输入！')
+        }
+      },
+      checkInterval() {
+        if(this.interval == null || this.interval == 0 ){
+          this.$message.error('请检查间距输入！')
+        }
+      }
     },
     mounted() {
       console.log('Page has been refreshed.');
@@ -941,7 +1236,7 @@ export default {
 <style scoped>
 
 .app {
-  min-width:1280px;
+  min-width: 1280px !important;
 }
 
 .background {
@@ -961,7 +1256,7 @@ export default {
   height: 100%;
   width: 100%;
   z-index: 999;
-
+  min-width: 1280px !important;
 }
 
 .input-area{
@@ -969,7 +1264,7 @@ export default {
   top:36%;
   right: 5%;
   height: 30%;
-  width: 10.5%;
+  width: 15%;
   /* width: 200px; */
   padding: 0px;
   border: 3px solid 	#87CEFA;
@@ -991,7 +1286,8 @@ export default {
   position: absolute;
   left: 33%;
   width: 60%;
-  margin-top: 18%;
+  margin-top: 15%;
+  /* padding-top: 0px; */
   border-radius: 15%;
 }
 
@@ -1001,7 +1297,7 @@ export default {
   /* width: 110px; */
   width: 56%;
   /* margin-top: 85px; */
-  margin-top: 43%;
+  margin-top: 32%;
   border-radius: 15%;
 }
 
@@ -1009,7 +1305,7 @@ export default {
   position: absolute;
   left: 37%;
   width: 56%;
-  margin-top: 68%;
+  margin-top: 50%;
   /* margin-top: 131px; */
   border-radius: 15%;
 }
@@ -1073,7 +1369,7 @@ export default {
   position: absolute;
   top: 10%;
   right: 1%;
-  height: 10%;
+  height: 11.5%;
   width: 35%;
   border: 3px solid 	#87CEFA;
   color: white;
@@ -1107,6 +1403,7 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
+  
 }
 
 h1 {
@@ -1140,32 +1437,28 @@ canvas {
   /* animation: breath 20s infinite alternate */
 }
 
-.start {
-  position: absolute; 
-  /* bottom: 10px; 
-  left: 15px;  */
-  bottom: 5%;
-  left: 6%;
+.dist-button {
+  width: 80%;
+  height: 80%;
   background: transparent; 
   box-shadow: 0 0 5px #87CEFA; 
   font-size: 80%; 
   /* height: 30px !important; */
   /* width: 80px; */
-  height: 12%;
-  width: 40%;
+
   color: white
 }
 
-.reset {
-  position: absolute; 
-  bottom: 5%;
-  left: 50%;
+.time-button {
+  width: 80%;
+  height: 80%;
   background: transparent; 
   box-shadow: 0 0 5px #87CEFA; 
   font-size: 80%; 
-  color: white;
-  height: 12%;
-  width: 40%;
+  /* height: 30px !important; */
+  /* width: 80px; */
+
+  color: white
 }
 
 .el-button:hover {
@@ -1215,6 +1508,31 @@ canvas {
 
   /* background: #21e251; */
 }
+
+.path-show::-webkit-scrollbar {
+    /*滚动条整体样式*/
+    width: 10px;
+    /*高宽分别对应横竖滚动条的尺寸*/
+    height: 6px;
+}
+
+.path-show::-webkit-scrollbar-thumb {
+    /*滚动条里面小方块*/
+    border-radius: 10px;
+    background-color: #02adf7;
+    background-image: -webkit-linear-gradient(45deg, rgba(255, 255, 255, .2) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, .2) 50%, rgba(255, 255, 255, .2) 75%, transparent 75%, transparent);
+}
+
+.path-show::-webkit-scrollbar-track {
+    /*滚动条里面轨道*/
+    -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+    background: #1b5aa9;
+}
+
+.path-show {
+    display: inline-block;
+}
+
 
 </style>
 
